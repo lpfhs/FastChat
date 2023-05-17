@@ -580,7 +580,7 @@ async def create_embeddings(request: EmbeddingsRequest):
     embedding = await get_embedding(payload)
     if "embedding" not in embedding:
         logger.warning("embeddings call failed: %s", embedding)
-        return create_error_response(content["error_code"], content["text"])
+        return create_error_response(embedding["error_code"], embedding["text"])
     data = [{"object": "embedding", "embedding": embedding["embedding"], "index": 0}]
     return EmbeddingsResponse(
         data=data,

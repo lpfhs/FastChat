@@ -50,7 +50,10 @@ from fastchat.protocol.openai_api_protocol import (
     UsageInfo,
 )
 
-logger = logging.getLogger(__name__)
+from fastchat.utils import build_logger
+
+
+logger = build_logger("openai_api_server", "openai_api_server.log")
 
 
 class AppSettings(BaseSettings):
@@ -227,7 +230,7 @@ def get_gen_params(
     else:
         gen_params.update({"stop": stop})
 
-    logger.debug(f"==== request ====\n{gen_params}")
+    logger.info(f"==== request ====\n{gen_params}")
     return gen_params
 
 
@@ -250,7 +253,7 @@ async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str
     if worker_addr == "":
         raise ValueError(f"No available worker for {model_name}")
 
-    logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
+    logger.info(f"model_name: {model_name}, worker_addr: {worker_addr}")
     return worker_addr
 
 
@@ -575,6 +578,9 @@ async def create_embeddings(request: EmbeddingsRequest):
     }
 
     embedding = await get_embedding(payload)
+    if "embedding" not in embedding:
+        logger.warning("embeddings call failed: %s", embedding)
+        return create_error_response(content["error_code"], content["text"])
     data = [{"object": "embedding", "embedding": embedding["embedding"], "index": 0}]
     return EmbeddingsResponse(
         data=data,

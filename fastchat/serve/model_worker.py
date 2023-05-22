@@ -22,6 +22,7 @@ try:
         AutoModelForCausalLM,
         LlamaTokenizer,
         AutoModel,
+        LlamaForCausalLM,
     )
 except ImportError:
     from transformers import (
@@ -246,17 +247,28 @@ class ModelWorker:
             input_ids = tokenizer.encode(params["input"], return_tensors="pt").to(
                 self.device
             )
-            model_output = self.model(input_ids, output_hidden_states=True)
-            is_chatglm = "chatglm" in str(type(self.model)).lower()
-            if is_chatglm:
-                data = (model_output.hidden_states[-1].transpose(0, 1))[0]
+            if isinstance(self.model, LlamaForCausalLM):
+                model_output = self.model.model(input_ids)
+                data = model_output.last_hidden_state[0]
+                logger.info(
+                    "using Llama memory optimization for last_hidden_state (%s)",
+                    data.shape,
+                )
             else:
-                data = model_output.hidden_states[-1][0]
+                model_output = self.model(input_ids, output_hidden_states=True)
+                is_chatglm = "chatglm" in str(type(self.model)).lower()
+                if is_chatglm:
+                    data = (model_output.hidden_states[-1].transpose(0, 1))[0]
+                else:
+                    data = model_output.hidden_states[-1][0]
+
             embedding = torch.mean(data, dim=0)
-            ret = {
-                "embedding": embedding.tolist(),
-                "token_num": len(self.tokenizer(params["input"]).input_ids),
-            }
+            return json.dumps(
+                {
+                    "embedding": embedding.tolist(),
+                    "token_num": len(input_ids[0]),
+                }
+            )
         except torch.cuda.OutOfMemoryError as e:
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",

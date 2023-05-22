@@ -263,12 +263,11 @@ class ModelWorker:
                     data = model_output.hidden_states[-1][0]
 
             embedding = torch.mean(data, dim=0)
-            return json.dumps(
-                {
-                    "embedding": embedding.tolist(),
-                    "token_num": len(input_ids[0]),
-                }
-            )
+            ret = {
+                "embedding": embedding.tolist(),
+                "token_num": len(input_ids[0]),
+            }
+            return ret
         except torch.cuda.OutOfMemoryError as e:
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",

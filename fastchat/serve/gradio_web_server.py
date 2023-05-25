@@ -115,8 +115,7 @@ def get_model_list(controller_url):
     return models
 
 
-def load_demo_refresh_model_list(url_params):
-    models = get_model_list(controller_url)
+def load_demo_single(models, url_params):
     selected_model = models[0] if len(models) > 0 else ""
     if "model" in url_params:
         model = url_params["model"]
@@ -143,26 +142,8 @@ def load_demo_reload_model(url_params, request: gr.Request):
     logger.info(
         f"load_demo_reload_model. ip: {request.client.host}. params: {url_params}"
     )
-    return load_demo_refresh_model_list(url_params)
-
-
-def load_demo_single(models, url_params):
-    dropdown_update = gr.Dropdown.update(visible=True)
-    if "model" in url_params:
-        model = url_params["model"]
-        if model in models:
-            dropdown_update = gr.Dropdown.update(value=model, visible=True)
-
-    state = None
-    return (
-        state,
-        dropdown_update,
-        gr.Chatbot.update(visible=True),
-        gr.Textbox.update(visible=True),
-        gr.Button.update(visible=True),
-        gr.Row.update(visible=True),
-        gr.Accordion.update(visible=True),
-    )
+    models = get_model_list(controller_url)
+    return load_demo_single(models, url_params)
 
 
 def load_demo(url_params, request: gr.Request):
@@ -259,7 +240,14 @@ def post_process_code(code):
 
 
 def model_worker_stream_iter(
-    conv, model_name, worker_addr, prompt, temperature, repetition_penalty, top_p, max_new_tokens
+    conv,
+    model_name,
+    worker_addr,
+    prompt,
+    temperature,
+    repetition_penalty,
+    top_p,
+    max_new_tokens,
 ):
     # Make requests
     gen_params = {
@@ -345,14 +333,21 @@ def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
             prompt = list(list(x) for x in conv.messages[conv.offset :])
         else:
             prompt = conv.get_prompt()
-        
+
         # Construct repetition_penalty
         if "t5" in model_name:
             repetition_penalty = 1.2
         else:
             repetition_penalty = 1.0
         stream_iter = model_worker_stream_iter(
-            conv, model_name, worker_addr, prompt, temperature, repetition_penalty, top_p, max_new_tokens
+            conv,
+            model_name,
+            worker_addr,
+            prompt,
+            temperature,
+            repetition_penalty,
+            top_p,
+            max_new_tokens,
         )
 
     conv.messages[-1][-1] = "▌"
@@ -459,12 +454,12 @@ def get_model_description_md(models):
             if minfo.simple_name in visited:
                 continue
             visited.add(minfo.simple_name)
-            one_model_md = (
-                f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
-            )
+            one_model_md = f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
         else:
             visited.add(name)
-            one_model_md = f"[{name}](): Add the description at fastchat/model/model_registry.py"
+            one_model_md = (
+                f"[{name}](): Add the description at fastchat/model/model_registry.py"
+            )
 
         if ct % 3 == 0:
             model_description_md += "|"
@@ -487,7 +482,6 @@ By using this service, users are required to agree to the following terms: The s
 
 ### Choose a model to chat with
 """
-
 
     state = gr.State()
     model_description_md = get_model_description_md(models)

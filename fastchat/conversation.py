@@ -477,6 +477,20 @@ register_conv_template(
     )
 )
 
+# OPT based model based on AlexU setup
+register_conv_template(
+    Conversation(
+        name="dsopt",
+        system="",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+        stop_str=["Human:","<|endoftext|>","</s>"],
+    )
+)
+
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")

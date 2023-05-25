@@ -1,7 +1,9 @@
 """Model adapter registration."""
 
+import os
 import math
 import sys
+import json
 from typing import List, Optional
 import warnings
 
@@ -21,6 +23,7 @@ from transformers import (
     LlamaTokenizer,
     LlamaForCausalLM,
     T5Tokenizer,
+    OPTForCausalLM
 )
 
 from fastchat.conversation import Conversation, get_conv_template
@@ -506,9 +509,43 @@ class H2OGPTAdapter(BaseAdapter):
         return get_conv_template("h2ogpt")
 
 
+class DSOPTAdapter(BaseAdapter):
+    """The model adapter for OPT facebook models and can be used for modified OPT models"""
+
+    def match(self, model_path: str):
+        return "opt" in model_path
+
+    def load_model(self, path: str, from_pretrained_kwargs: dict):
+        # Locally tokenizer loading has some issue, so we need to force download
+        model_json = os.path.join(path, "config.json")
+        if os.path.exists(model_json):
+            model_json_file = json.load(open(model_json))
+            model_name = model_json_file["_name_or_path"]
+            tokenizer = AutoTokenizer.from_pretrained(model_name,
+                                                      fast_tokenizer=True)
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(path, fast_tokenizer=True)
+
+        tokenizer.pad_token = tokenizer.eos_token
+
+        model_config = AutoConfig.from_pretrained(path)
+        model = OPTForCausalLM.from_pretrained(path,
+                                               from_tf=bool(".ckpt" in path),
+                                               config=model_config).half()
+
+        model.config.end_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = model.config.eos_token_id
+        model.resize_token_embeddings(len(tokenizer))
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("dsopt")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(VicunaAdapter)
+register_model_adapter(DSOPTAdapter)
 register_model_adapter(T5Adapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(ChatGLMAdapter)

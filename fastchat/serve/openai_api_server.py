@@ -356,6 +356,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
     try:
         all_tasks = await asyncio.gather(*chat_completions)
     except Exception as e:
+        logger.exception("create_chat_completion: failed with exception:")
         return create_error_response(ErrorCode.INTERNAL_ERROR, str(e))
     usage = UsageInfo()
     for i, content in enumerate(all_tasks):
@@ -514,6 +515,7 @@ async def create_completion(request: CompletionRequest):
         try:
             all_tasks = await asyncio.gather(*text_completions)
         except Exception as e:
+            logger.exception("create_completion: failed with exception:")
             return create_error_response(ErrorCode.INTERNAL_ERROR, str(e))
 
         choices = []
@@ -649,6 +651,9 @@ async def create_embeddings(request: EmbeddingsRequest, model_name: str = None):
             "input": batch,
         }
         embedding = await get_embedding(payload)
+        if "embedding" not in embedding:
+            logger.error("embeddings call to model worker failed with: %s", embedding)
+            return create_error_response(ErrorCode.INTERNAL_ERROR, str(embedding))
         data += [
             {
                 "object": "embedding",

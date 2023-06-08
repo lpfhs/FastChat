@@ -200,12 +200,14 @@ class ModelWorker:
                     ret["logprobs"] = output["logprobs"]
                 yield json.dumps(ret).encode() + b"\0"
         except torch.cuda.OutOfMemoryError as e:
+            logger.exception("generate_stream_gate: cuda out-of-memory:")
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
             yield json.dumps(ret).encode() + b"\0"
         except (ValueError, RuntimeError) as e:
+            logger.exception("generate_stream_gate: failed with value or runtime error:")
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
@@ -231,11 +233,13 @@ class ModelWorker:
             if "logprobs" in output:
                 ret["logprobs"] = output["logprobs"]
         except torch.cuda.OutOfMemoryError as e:
+            logger.exception("generate_gate: cuda out-of-memory:")
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
         except (ValueError, RuntimeError) as e:
+            logger.exception("generate_gate: failed with value or runtime error:")
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
@@ -294,11 +298,13 @@ class ModelWorker:
                     "token_num": token_num,
                 }
         except torch.cuda.OutOfMemoryError as e:
+            logger.exception("generate_embeddings: cuda out-of-memory:")
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
         except (ValueError, RuntimeError) as e:
+            logger.exception("generate_embeddings: failed with value or runtime error:")
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,

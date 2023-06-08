@@ -513,7 +513,7 @@ class DSOPTAdapter(BaseAdapter):
     """The model adapter for OPT facebook models and can be used for modified OPT models"""
 
     def match(self, model_path: str):
-        return "opt" in model_path
+        return "opt-" in model_path
 
     def load_model(self, path: str, from_pretrained_kwargs: dict):
         # Locally tokenizer loading has some issue, so we need to force download
@@ -545,7 +545,6 @@ class DSOPTAdapter(BaseAdapter):
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(VicunaAdapter)
-register_model_adapter(DSOPTAdapter)
 register_model_adapter(T5Adapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(ChatGLMAdapter)
@@ -563,6 +562,7 @@ register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
 register_model_adapter(H2OGPTAdapter)
+register_model_adapter(DSOPTAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)

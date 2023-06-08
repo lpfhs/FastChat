@@ -342,7 +342,7 @@ class MPTAdapter(BaseAdapter):
     """The model adapter for mosaicml/mpt-7b-chat"""
 
     def match(self, model_path: str):
-        return "mpt" in model_path
+        return "/mpt-" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         model = AutoModelForCausalLM.from_pretrained(
@@ -513,7 +513,7 @@ class DSOPTAdapter(BaseAdapter):
     """The model adapter for OPT facebook models and can be used for modified OPT models"""
 
     def match(self, model_path: str):
-        return "opt-" in model_path
+        return "/opt-" in model_path
 
     def load_model(self, path: str, from_pretrained_kwargs: dict):
         # Locally tokenizer loading has some issue, so we need to force download
